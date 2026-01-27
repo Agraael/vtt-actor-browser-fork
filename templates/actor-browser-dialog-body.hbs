@@ -1,0 +1,57 @@
+<main>
+    <div class="sidebar">
+        <div class="source-filter filter-row">
+            <label for="source-filter">{{{localize "ACTOR_BROWSER.Filter.Source"}}}</label>
+            <select id="source-filter" name="source-filter" type="dropdown" placeholder="Filter Source...">
+                {{selectOptions sources selected=sourceFilter localize=true valueAttr="id" labelAttr="label"}}
+            </select>
+        </div>
+
+        <div class="folder-tree-container">
+            {{#if showFolderFilter}}
+            <div class="folder-tree-options">
+                <label>
+                    <input type="checkbox" id="recursive-filter" {{#if recursiveFilter}}checked{{/if}}>
+                    <span>Include subfolders</span>
+                </label>
+            </div>
+            <ul class="folder-tree-list root">
+                <li class="folder-tree-item-wrapper folder-tree-root" data-folder-id="{{folderTree.id}}">
+                    <div class="folder-tree-item {{#if folderTree.isActive}}active{{/if}}">
+                        <span class="folder-tree-icon"><i class="fas fa-list"></i></span>
+                        <span class="folder-tree-name">{{folderTree.name}}</span>
+                        <span class="folder-tree-count">({{folderTree.count}})</span>
+                    </div>
+                </li>
+            </ul>
+            {{> actorBrowserTreeItemPartial folderTree}}
+            {{/if}}
+        </div>
+
+        <div class="system-filters">
+            {{#> actorBrowserAdditionalFiltersPartial
+            additionalFiltersData=additionalFiltersData}}{{/actorBrowserAdditionalFiltersPartial}}
+        </div>
+    </div>
+    <div class="list-panel">
+        <div class="search-input">
+            <div class="search-row">
+                <label>{{{localize "ACTOR_BROWSER.SearchName"}}}</label>
+                <input type="text" class="search-name" value="{{searchName}}">
+                <button type="button" class="view-toggle-button" title="Toggle view mode">
+                    <i class="{{viewModeIcon}}"></i>
+                </button>
+            </div>
+            {{#> actorBrowserAdditionalSearchesPartial
+            additionalSearchesData=additionalSearchesData}}{{/actorBrowserAdditionalSearchesPartial}}
+        </div>
+        <div class="actor-list-container {{viewModeClass}}">
+            <table id="actor-list" class="actor-list">
+                {{> actorBrowserListPartial actors=actors}}
+            </table>
+            <div class="actor-grid-container">
+                {{> actorBrowserGridPartial actors=actors}}
+            </div>
+        </div>
+    </div>
+</main>

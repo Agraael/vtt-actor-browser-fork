@@ -1,0 +1,38 @@
+{{#if this.children.length}}
+<ul class="folder-tree-list {{#if this.isRoot}}root{{/if}}">
+    {{#each this.children}}
+    <li class="folder-tree-item-wrapper" data-folder-id="{{this.id}}">
+        <div class="folder-tree-item {{#if this.isActive}}active{{/if}}" style="padding-left: {{this.indent}}px;">
+            <span class="folder-tree-toggle" data-action="toggle-folder" data-folder-id="{{this.id}}">
+                {{#if this.children.length}}
+                {{#if this.isExpanded}}
+                <i class="fas fa-caret-down"></i>
+                {{else}}
+                <i class="fas fa-caret-right"></i>
+                {{/if}}
+                {{else}}
+                <span class="spacer" style="width: 10px; display: inline-block;"></span>
+                {{/if}}
+            </span>
+            <span class="folder-tree-icon" {{#if this.color}}style="color: {{this.color}}; text-shadow: 0 0 1px #000;"
+                {{/if}}>
+                {{#if this.children.length}}
+                {{#if this.isExpanded}}
+                <i class="fas fa-folder-open"></i>
+                {{else}}
+                <i class="fas fa-folder"></i>
+                {{/if}}
+                {{else}}
+                <i class="fas fa-folder"></i>
+                {{/if}}
+            </span>
+            <span class="folder-tree-name">{{this.name}}</span>
+            <span class="folder-tree-count">({{this.count}})</span>
+        </div>
+        {{#if this.isExpanded}}
+        {{> actorBrowserTreeItemPartial this}}
+        {{/if}}
+    </li>
+    {{/each}}
+</ul>
+{{/if}}

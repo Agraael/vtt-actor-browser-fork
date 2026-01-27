@@ -1,0 +1,7 @@
+{{#each actors}}
+<div class="actor-grid-item actor-option{{#if (and ../selectedActor (eq ../selectedActor uuid))}} selected{{/if}}"
+    data-actor-id="{{uuid}}" data-document-id="{{id}}" data-tooltip="{{tooltip}}">
+    <img src="{{img.display}}" alt="{{name.display}}" loading="lazy" class="actor-grid-img">
+    <p class="actor-grid-name">{{name.display}}</p>
+</div>
+{{/each}}
