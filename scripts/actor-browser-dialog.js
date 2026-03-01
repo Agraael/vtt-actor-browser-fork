@@ -682,6 +682,7 @@ export class ActorBrowserDialog extends HandlebarsApplicationMixin(ApplicationV2
 
                 li.addClass("document actor directory-item");
 
+                const actor = game.actors.get(docId);
                 if (!actor) return false;
 
                 if (!originalCondition) return true;
