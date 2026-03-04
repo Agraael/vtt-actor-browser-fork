@@ -75,6 +75,21 @@ export class ActorBrowserDialog extends HandlebarsApplicationMixin(ApplicationV2
         };
 
         event.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+
+        // Delay opacity + pointer-events change so the browser captures the drag ghost first
+        const dialogEl = this.element;
+        if (dialogEl) {
+            requestAnimationFrame(() => {
+                dialogEl.style.opacity = '0.05';
+                dialogEl.style.pointerEvents = 'none';
+            });
+
+            // dragend fires on the source element, not the dialog, so it works even with pointerEvents:none
+            event.currentTarget.addEventListener('dragend', () => {
+                dialogEl.style.opacity = '';
+                dialogEl.style.pointerEvents = '';
+            }, { once: true });
+        }
     }
 
     async _prepareContext(_options) {
