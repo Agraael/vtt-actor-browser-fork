@@ -10,7 +10,7 @@ export class Lancer extends BaseSystem {
     ];
 
     // Lancer typically uses "mech", "pilot", "npc"
-    static ACTOR_TYPES = ["mech", "pilot", "npc", "vehicle", "ship"];
+    static ACTOR_TYPES = ["mech", "pilot", "npc", "vehicle", "ship", "deployable"];
 
     static HEADER_CONFIG = {
         type: {
@@ -98,17 +98,22 @@ export class Lancer extends BaseSystem {
     async buildRowData(actors, headerData) {
         let rowData = [];
 
+        const NA = { display: "-", sortValue: Number.MAX_SAFE_INTEGER };
+        const hasMechStats = (actor) => ["mech", "npc"].includes(actor.type);
+
         for (const actor of actors) {
+            const mechStats = hasMechStats(actor);
+
             let data = {
                 ...this.buildCommonRowData(actor),
                 type: { display: actor.type.toUpperCase(), sortValue: actor.type },
 
-                hull: this.getValue(actor, "system.hull"),
-                agi: this.getValue(actor, "system.agi"),
-                sys: this.getValue(actor, "system.sys"),
-                eng: this.getValue(actor, "system.eng"),
+                hull: mechStats ? this.getValue(actor, "system.hull") : NA,
+                agi: mechStats ? this.getValue(actor, "system.agi") : NA,
+                sys: mechStats ? this.getValue(actor, "system.sys") : NA,
+                eng: mechStats ? this.getValue(actor, "system.eng") : NA,
 
-                structure: this.getValue(actor, "system.structure.value"),
+                structure: mechStats ? this.getValue(actor, "system.structure.value") : NA,
 
                 hp: {
                     display: actor.system.hp?.max || 0,
@@ -117,18 +122,18 @@ export class Lancer extends BaseSystem {
 
                 armor: this.getValue(actor, "system.armor"),
 
-                reactor: this.getValue(actor, "system.stress.value"), // Stress/Reactor
+                reactor: mechStats ? this.getValue(actor, "system.stress.value") : NA,
 
-                heat: {
+                heat: mechStats ? {
                     display: actor.system.heat?.max || 0,
                     sortValue: actor.system.heat?.max || 0
-                },
+                } : NA,
 
                 speed: this.getValue(actor, "system.speed"),
-                save: this.getValue(actor, "system.save"), // Target Save?
+                save: mechStats ? this.getValue(actor, "system.save") : NA,
                 evade: this.getValue(actor, "system.evasion"),
                 edef: this.getValue(actor, "system.e_defense"),
-                sensor: this.getValue(actor, "system.sensors"), // Sensor Range
+                sensor: mechStats ? this.getValue(actor, "system.sensors") : NA,
                 spacer: { display: "", sortValue: "" }
             };
 
