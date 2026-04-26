@@ -10,7 +10,9 @@ A fork of the original [Actor Browser](https://github.com/ddbrown30/actor-browse
 
 ## Installation
 
-1.  Copy the manifest link.
+**Manifest URL:** `https://github.com/Agraael/vtt-actor-browser-fork/releases/latest/download/module.json`
+
+1.  Copy the manifest link above.
 2.  Open Foundry VTT and go to the **Add-on Modules** tab.
 3.  Click **Install Module**.
 4.  Paste the link into the **Manifest URL** field at the bottom.
