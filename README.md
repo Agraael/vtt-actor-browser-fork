@@ -1,4 +1,4 @@
-# Actor Browser (Lancer Fork)
+# Actor Browser (Lasossis's Fork)
 
 A fork of the original [Actor Browser](https://github.com/ddbrown30/actor-browser) by ddbrown30, modified for the Lancer system.
 
