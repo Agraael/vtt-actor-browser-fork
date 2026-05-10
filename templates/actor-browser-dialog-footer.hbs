@@ -1,4 +1,5 @@
 <div class="footer">
-    <button data-action="select" {{#unless selectedActor}}disabled{{/unless}}>{{selectButtonString}}</button>
+    <button data-action="select" {{#unless (eq selectedCount 1)}}disabled{{/unless}}>{{selectButtonString}}</button>
+    <button data-action="groupEditTokens" {{#unless groupEditEnabled}}disabled{{/unless}}>{{groupEditButtonString}}</button>
     <button data-action="close">{{{localize "ACTOR_BROWSER.Close"}}}</button>
 </div>

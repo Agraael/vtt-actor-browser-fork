@@ -14,7 +14,7 @@
     {{/each}}
 </tr>
 {{#each actors}}
-<tr class="actor-option{{#if (and ../selectedActor (eq ../selectedActor uuid))}} selected{{/if}}"
+<tr class="actor-option{{#if isSelected}} selected{{/if}}"
     data-actor-id="{{uuid}}" data-document-id="{{id}}" data-tooltip="{{tooltip}}">
     <td class="actor-cell-img">
         <img src="{{img.display}}" alt="{{name.display}}" loading="lazy" class="actor-row-img">

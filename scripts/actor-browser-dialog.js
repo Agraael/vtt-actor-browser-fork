@@ -1,5 +1,6 @@
 import { DEFAULT_CONFIG, SETTING_KEYS } from "./module-config.js";
 import { Utils } from "./utils.js";
+import { openGroupTokenEdit } from "./group-edit.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -12,7 +13,8 @@ export class ActorBrowserDialog extends HandlebarsApplicationMixin(ApplicationV2
         position: { width: 1300, height: 600 },
         actions: {
             select: function (event, button) { this.select(); },
-            close: function (event, button) { this.close(); }
+            close: function (event, button) { this.close(); },
+            groupEditTokens: function (event, button) { this.groupEditTokens(); }
         },
     };
 
@@ -64,6 +66,25 @@ export class ActorBrowserDialog extends HandlebarsApplicationMixin(ApplicationV2
         this.systemHandler = game.actorBrowser.systemHandler;
         this.systemHandler.clearFilters(this);
         this.systemHandler.clearSearches(this);
+
+        this.selectedActors = new Set();
+        this.lastClickedUuid = null;
+    }
+
+    get selectedActor() {
+        if (!this.selectedActors.size) return "";
+        if (this.lastClickedUuid && this.selectedActors.has(this.lastClickedUuid)) return this.lastClickedUuid;
+        return Array.from(this.selectedActors).pop();
+    }
+
+    set selectedActor(uuid) {
+        this.selectedActors.clear();
+        if (uuid) {
+            this.selectedActors.add(uuid);
+            this.lastClickedUuid = uuid;
+        } else {
+            this.lastClickedUuid = null;
+        }
     }
 
     onDragStart(event) {
@@ -166,6 +187,10 @@ export class ActorBrowserDialog extends HandlebarsApplicationMixin(ApplicationV2
         this.rowData = this.filterRows(this.rowData);
         this.rowData = this.sortRows(this.rowData, this.sortColumn, this.sortOrder);
 
+        for (const row of this.rowData) {
+            row.isSelected = this.selectedActors.has(row.uuid);
+        }
+
         let selectButtonString = this.getSelectButtonString();
 
         return {
@@ -177,6 +202,9 @@ export class ActorBrowserDialog extends HandlebarsApplicationMixin(ApplicationV2
             searchName: this.searchName,
             actors: this.rowData,
             selectedActor: this.selectedActor,
+            selectedCount: this.selectedActors.size,
+            groupEditEnabled: this.selectedActors.size >= 2,
+            groupEditButtonString: this.getGroupEditButtonString(),
             selectButtonString: selectButtonString,
             additionalFiltersData: additionalFiltersData,
             additionalSearchesData: additionalSearchesData,
@@ -387,27 +415,14 @@ export class ActorBrowserDialog extends HandlebarsApplicationMixin(ApplicationV2
         const rows = element.querySelectorAll("tr");
         for (let row of rows) {
             if (row.rowIndex == 0) continue; //Skip the header row
+            if (!row.dataset?.actorId) continue;
 
-            row.addEventListener("click", async event => {
-                this.selectedActor = row.dataset.actorId;
+            row.addEventListener("click", event => {
+                this._handleRowClick(row.dataset.actorId, event);
+            });
 
-                //Loop over the rows and add/remove the selected class as needed
-                for (let r of rows) {
-                    if (!r.dataset?.actorId) continue;
-                    if (r.dataset.actorId == this.selectedActor) {
-                        if (!r.classList.contains("selected")) {
-                            r.classList.add("selected");
-                        }
-                    } else {
-                        r.classList.remove("selected");
-                    }
-                }
-
-                //Update the select button
-                const selectButton = element.querySelector('[data-action="select"]');
-                let selectButtonString = this.getSelectButtonString();
-                selectButton.textContent = selectButtonString;
-                selectButton.disabled = false;
+            row.addEventListener("contextmenu", () => {
+                this._ensureSelectedForContextMenu(row.dataset.actorId);
             });
 
             row.addEventListener("dblclick", async event => {
@@ -422,31 +437,86 @@ export class ActorBrowserDialog extends HandlebarsApplicationMixin(ApplicationV2
         // Add click listeners to grid items
         const gridItems = element.querySelectorAll(".actor-grid-item");
         for (let item of gridItems) {
-            item.addEventListener("click", async () => {
-                this.selectedActor = item.dataset.actorId;
+            if (!item.dataset?.actorId) continue;
 
-                // Loop over items and add/remove the selected class
-                for (let i of gridItems) {
-                    if (i.dataset.actorId == this.selectedActor) {
-                        if (!i.classList.contains("selected")) {
-                            i.classList.add("selected");
-                        }
-                    } else {
-                        i.classList.remove("selected");
-                    }
-                }
+            item.addEventListener("click", event => {
+                this._handleRowClick(item.dataset.actorId, event);
+            });
 
-                // Update the select button
-                const selectButton = element.querySelector('[data-action="select"]');
-                let selectButtonString = this.getSelectButtonString();
-                selectButton.textContent = selectButtonString;
-                selectButton.disabled = false;
+            item.addEventListener("contextmenu", () => {
+                this._ensureSelectedForContextMenu(item.dataset.actorId);
             });
 
             item.addEventListener("dblclick", async () => {
                 this.select();
             });
         }
+    }
+
+    _handleRowClick(uuid, event) {
+        if (!uuid) return;
+
+        if (event.shiftKey && this.lastClickedUuid && this.rowData?.length) {
+            const order = this.rowData.map(r => r.uuid);
+            const startIdx = order.indexOf(this.lastClickedUuid);
+            const endIdx = order.indexOf(uuid);
+            if (startIdx !== -1 && endIdx !== -1) {
+                const [lo, hi] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+                for (let i = lo; i <= hi; i++) this.selectedActors.add(order[i]);
+            } else {
+                this.selectedActors.add(uuid);
+            }
+        } else if (event.ctrlKey || event.metaKey) {
+            if (this.selectedActors.has(uuid)) this.selectedActors.delete(uuid);
+            else this.selectedActors.add(uuid);
+        } else {
+            this.selectedActors.clear();
+            this.selectedActors.add(uuid);
+        }
+
+        this.lastClickedUuid = this.selectedActors.has(uuid) ? uuid : null;
+        this._syncSelectionUi();
+    }
+
+    // Right-click on an unselected row replaces selection with that row, so the
+    // context menu's group-edit entry operates on a sensible target.
+    _ensureSelectedForContextMenu(uuid) {
+        if (!uuid || this.selectedActors.has(uuid)) return;
+        this.selectedActors.clear();
+        this.selectedActors.add(uuid);
+        this.lastClickedUuid = uuid;
+        this._syncSelectionUi();
+    }
+
+    _syncSelectionUi() {
+        const allRows = this.element.querySelectorAll(".actor-option");
+        for (const el of allRows) {
+            const u = el.dataset.actorId;
+            if (this.selectedActors.has(u)) el.classList.add("selected");
+            else el.classList.remove("selected");
+        }
+
+        const selectButton = this.element.querySelector('[data-action="select"]');
+        if (selectButton) {
+            selectButton.textContent = this.getSelectButtonString();
+            selectButton.disabled = this.selectedActors.size !== 1;
+        }
+        const groupBtn = this.element.querySelector('[data-action="groupEditTokens"]');
+        if (groupBtn) {
+            groupBtn.textContent = this.getGroupEditButtonString();
+            groupBtn.disabled = this.selectedActors.size < 2;
+        }
+    }
+
+    getGroupEditButtonString() {
+        const n = this.selectedActors.size;
+        const base = game.i18n.localize("ACTOR_BROWSER.GroupEditTokens");
+        return n >= 2 ? `${base} (${n})` : base;
+    }
+
+    async groupEditTokens() {
+        if (this.selectedActors.size < 2) return;
+        return openGroupTokenEdit(Array.from(this.selectedActors));
     }
 
     toggleView() {
@@ -736,6 +806,13 @@ export class ActorBrowserDialog extends HandlebarsApplicationMixin(ApplicationV2
             }
         });
 
+        menuItems.unshift({
+            name: "ACTOR_BROWSER.GroupEditTokens",
+            icon: '<i class="fas fa-users-cog"></i>',
+            condition: () => this.selectedActors.size >= 2,
+            callback: () => this.groupEditTokens()
+        });
+
         return menuItems;
     }
 
@@ -862,9 +939,13 @@ export class ActorBrowserDialog extends HandlebarsApplicationMixin(ApplicationV2
             filtered = filtered.filter((r) => r.name.display.toLowerCase().includes(this.searchName.toLowerCase()));
         }
 
-        //If our selected actor does not exist in our filtered list, deselect it
-        if (!filtered.find((r) => r.uuid == this.selectedActor)) {
-            this.selectedActor = "";
+        //Drop selections whose actor is no longer in the filtered list
+        const visibleUuids = new Set(filtered.map(r => r.uuid));
+        for (const uuid of this.selectedActors) {
+            if (!visibleUuids.has(uuid)) this.selectedActors.delete(uuid);
+        }
+        if (this.lastClickedUuid && !this.selectedActors.has(this.lastClickedUuid)) {
+            this.lastClickedUuid = null;
         }
 
         return filtered;

@@ -240,6 +240,23 @@
     margin-top: .125rem;
 }
 
+.actor-browser-dialog .footer button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.group-edit-mixed,
+.group-edit-mixed:hover {
+    border: 1px solid #c9a02a !important;
+    background: rgba(201, 160, 42, 0.12) !important;
+    box-shadow: 0 0 4px rgba(201, 160, 42, 0.6);
+}
+
+input[type="checkbox"].group-edit-mixed {
+    outline: 2px solid #c9a02a;
+    outline-offset: 2px;
+}
+
 .actor-browser-dialog .wrapper {
     display: flex;
     flex-direction: column;
